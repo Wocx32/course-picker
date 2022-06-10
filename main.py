@@ -9,7 +9,7 @@ from selenium.webdriver.common.by import By
 import config
 
 
-driver_path = 'geckodriver.exe'
+driver_path = './geckodriver'
 url = 'https://empower.fccollege.edu.pk/fusebox.cfm'
 
 def get_source(url) -> str:
@@ -30,13 +30,14 @@ def get_source(url) -> str:
     form.submit()
 
     
-    student_records = WebDriverWait(driver, 10).until(EC.visibility_of_element_located((By.CLASS_NAME, 'top_menu_strc')))
+    student_records = WebDriverWait(driver, 30).until(EC.visibility_of_element_located((By.CLASS_NAME, 'top_menu_strc')))
     student_records.click()
+    time.sleep(1)
 
-    WebDriverWait(driver, 20).until(EC.visibility_of_element_located((By.ID, 'WEBSRG49'))).click()
+    WebDriverWait(driver, 30).until(EC.visibility_of_element_located((By.ID, 'WEBSRG49'))).click()
 
 
-    catalog = WebDriverWait(driver, 10).until(EC.visibility_of_element_located((By.NAME, 'cata_id')))
+    catalog = WebDriverWait(driver, 30).until(EC.visibility_of_element_located((By.NAME, 'cata_id')))
     # catalog = driver.find_element_by_name('cata_id')
 
     drop = Select(catalog)
@@ -45,6 +46,24 @@ def get_source(url) -> str:
 
     driver.find_element(By.NAME, 'GetWindow').click()
 
+    WebDriverWait(driver, 30).until(EC.visibility_of_element_located((By.NAME, 'add'))).click()
+    WebDriverWait(driver, 30).until(EC.visibility_of_element_located((By.CLASS_NAME, 'button'))).click()
+
+    form = WebDriverWait(driver, 30).until(EC.visibility_of_element_located((By.NAME, 'form1')))
+    # count = 0
+
+    for i in form.find_elements(By.TAG_NAME, 'tr'):
+        children = i.find_elements(By.TAG_NAME, 'td')
+        if len(children) >= 36 and children[2].text == 'Credit':
+            print(len(children))
+            print([child.text for child in children])
+            # print(children[5].text, children[6].text, children[7].text)
+            print('\n')
+            # count += 1
+        # children = i.find_elements(By.TAG_NAME, 'td')
+        # if len(children) > 17:
+        #     print(children[5].text, children[6].text, children[7].text)
+            
 
     # driver.quit()
     # return source
