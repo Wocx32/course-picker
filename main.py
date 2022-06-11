@@ -83,8 +83,7 @@ def register(url, term, courses) -> str:
     submit = driver.find_element(By.NAME, 'submit')
     driver.execute_script("arguments[0].click();", submit)
     
-    # driver.implicitly_wait(3)
-    # WebDriverWait(driver, 30).until(EC.visibility_of_element_located((By.CLASS_NAME, 'top_menu_strc')))
+
     time.sleep(3)
     submit2 = WebDriverWait(driver, 10).until(EC.visibility_of_element_located((By.NAME, 'submit')))
     driver.execute_script("arguments[0].click();", submit2)
