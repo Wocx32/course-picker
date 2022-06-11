@@ -2,9 +2,11 @@
 import time
 from selenium import webdriver
 from selenium.webdriver.firefox.options import Options
-from selenium.webdriver.support.ui import Select
+from selenium.webdriver.support.ui import Select, WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.common.by import By
 
-driver_path = 'geckodriver'
+from config import driver_path
 
 def get_source(url, semester) -> str:
     options = Options()
@@ -24,7 +26,7 @@ def get_source(url, semester) -> str:
 
     button = driver.find_element_by_xpath('//*[@id="search"]')
     button.click()
-    time.sleep(4)
+    WebDriverWait(driver, 30).until(EC.visibility_of_element_located((By.ID, "courses")))
     source = driver.page_source
 
     driver.quit()

@@ -10,11 +10,90 @@ from selenium.webdriver.common.by import By
 
 import config
 
+try:
+    driver_path = config.driver_path
+except:
+    driver_path = 'geckodriver.exe'
 
-driver_path = './geckodriver'
+
 url = 'https://empower.fccollege.edu.pk/fusebox.cfm'
 
-def register(url, term, courses) -> str:
+
+def create_db(term):
+    from database import create_database
+
+    print('Creating database please wait... (This may take a minute or two)')
+
+    create_database(term)
+
+    print('Database created!')
+
+
+def check_course_clash(course1, course2):
+        course1_days = ''.join(course1['days'])
+        course2_days = ''.join(course2['days'])
+
+        if course1_days in course2_days or course2_days in course1_days:
+            if course1['start_time'] <= course2['start_time'] <= course1['end_time'] or course1['start_time'] <= course2['end_time'] <= course1['end_time']:
+                return True
+        return False
+
+
+def check_clash(term, input_courses, recreate_database=False):
+    if recreate_database:
+        create_db(term)
+
+    try:
+        with open(f'course-data-{term}.pickle', 'rb') as file:
+            data = pickle.load(file)
+    except:
+        create_db(term)
+
+        with open(f'course-data-{term}.pickle', 'rb') as file:
+            data = pickle.load(file)
+
+    input_courses = [x.strip().upper() for x in input_courses]
+
+    courses = []
+
+    for i in data:
+        if i['name'] in input_courses:
+            if i['lab']:
+                i['name'] = i['name'] + ' Lab'
+                courses.append(i)
+                continue
+            courses.append(i)
+
+    detected = []
+
+    track_detected = False
+
+    for i in courses:
+        for j in courses:
+            if i['name'] != j['name'] and check_course_clash(i, j):
+                for k in detected:
+                    if i['name'] in k and j['name'] in k:
+                        track_detected = True
+                        break
+                    track_detected = False
+                
+                if not track_detected:
+                    detected.append((i['name'], j['name']))
+                    print(i['name'], 'clashes with', j['name'])
+                track_detected = False
+
+    if detected:
+        return True
+    
+    return False
+
+
+def register(url, term, course_catalog, courses, recreate_database=False) -> str:
+
+    if check_clash(term, courses, recreate_database):
+        print('Please fix the clash and try again')
+        return False
+
     options = Options()
     # options.headless = True
 
@@ -44,7 +123,7 @@ def register(url, term, courses) -> str:
 
     drop = Select(catalog)
 
-    drop.select_by_value(term)
+    drop.select_by_value(course_catalog)
 
     driver.find_element(By.NAME, 'GetWindow').click()
 
@@ -55,6 +134,7 @@ def register(url, term, courses) -> str:
     # count = 0
     
     registered = []
+    courses = [x.strip().upper() for x in courses] 
 
     source = driver.page_source
     
@@ -68,8 +148,6 @@ def register(url, term, courses) -> str:
 
     for i in tr:
         if len(i) >= 19:
-            # print(i[4].text, i[5].text, i[6].text)
-            # print(i[0][0].get("name"))
             current_course = clean_join(i[4], i[5], i[6])
             if current_course in courses:
 
@@ -99,6 +177,15 @@ def register(url, term, courses) -> str:
         pass
 
 
-courses = ['ENGL 110 A', 'EDUC 110 B']
+    return True
 
-register(url, '202122', courses)
+
+# courses = ['envr 240 a', 'geog 101 a']
+courses = input('Enter courses: ').split(',')
+
+result = register(url, '2022SU', '202122', courses)
+
+if result:
+    print('Successfully registered! (You may want to check if some courses have not been registered, pre req not met or credit limit reached)')
+else:
+    print('Failed to register!')

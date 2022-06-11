@@ -9,7 +9,7 @@ url = 'https://empower.fccollege.edu.pk/fusebox.cfm?fuseaction=CourseCatalog'
 
 def get_page_source(term):
     source = get_source(url, term)
-    soup = BeautifulSoup(source, 'html.parser')
+    soup = BeautifulSoup(source, 'lxml')
 
     return soup.find('div', id='courses')
 
@@ -126,7 +126,7 @@ def convert_to_datetime(timestamp):
 def create_database(term):
     data = get_info(get_page_source(term))
 
-    with open('course-data.pickle', 'wb') as file:
+    with open(f'course-data-{term}.pickle', 'wb') as file:
         pickle.dump(data, file)
 
 if __name__ == '__main__':
