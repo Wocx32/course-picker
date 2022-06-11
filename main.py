@@ -120,7 +120,7 @@ def register(url, term, course_catalog, courses, recreate_database=False) -> str
     
     student_records = WebDriverWait(driver, 30).until(EC.visibility_of_element_located((By.CLASS_NAME, 'top_menu_strc')))
     student_records.click()
-    time.sleep(1)
+    time.sleep(2)
 
     WebDriverWait(driver, 30).until(EC.visibility_of_element_located((By.ID, 'WEBSRG49'))).click()
 
@@ -166,7 +166,7 @@ def register(url, term, course_catalog, courses, recreate_database=False) -> str
                 if len(courses) == 0:
                     break
 
-    submit = driver.find_element(By.NAME, 'submit')
+    submit = WebDriverWait(driver, 30).until(EC.visibility_of_element_located((By.NAME, 'submit')))
     print('Submitting...\n')
     driver.execute_script("arguments[0].click();", submit)
     
