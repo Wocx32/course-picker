@@ -133,3 +133,4 @@ dmypy.json
 test*.py
 geckodriver*
 config.py
+courses.png

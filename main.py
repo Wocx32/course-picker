@@ -3,6 +3,7 @@ import time
 from io import StringIO
 from lxml import etree
 from selenium import webdriver
+from selenium.webdriver.firefox.service import Service
 from selenium.webdriver.firefox.options import Options
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import Select, WebDriverWait
@@ -95,10 +96,10 @@ def register(url, term, course_catalog, courses, recreate_database=False) -> str
         return False
 
     options = Options()
-    # options.headless = True
+    options.headless = True
 
     
-    driver = webdriver.Firefox(options=options, executable_path=driver_path)
+    driver = webdriver.Firefox(options=options, service=Service(driver_path))
 
     driver.get(url)
 
@@ -108,7 +109,9 @@ def register(url, term, course_catalog, courses, recreate_database=False) -> str
 
     username.send_keys(config.username)
     password.send_keys(config.password)
+    print('\nLogging in...\n')
     form.submit()
+    print('Logged in!\n')
 
     
     student_records = WebDriverWait(driver, 30).until(EC.visibility_of_element_located((By.CLASS_NAME, 'top_menu_strc')))
@@ -119,19 +122,20 @@ def register(url, term, course_catalog, courses, recreate_database=False) -> str
 
 
     catalog = WebDriverWait(driver, 30).until(EC.visibility_of_element_located((By.NAME, 'cata_id')))
-    # catalog = driver.find_element_by_name('cata_id')
+
 
     drop = Select(catalog)
 
     drop.select_by_value(course_catalog)
 
+    print('Selecting catalog...\n')
     driver.find_element(By.NAME, 'GetWindow').click()
 
     WebDriverWait(driver, 30).until(EC.visibility_of_element_located((By.NAME, 'add'))).click()
     WebDriverWait(driver, 30).until(EC.visibility_of_element_located((By.CLASS_NAME, 'button'))).click()
 
     WebDriverWait(driver, 30).until(EC.visibility_of_element_located((By.NAME, 'form1')))
-    # count = 0
+    print('Selecting courses...\n')
     
     registered = []
     courses = [x.strip().upper() for x in courses] 
@@ -159,31 +163,77 @@ def register(url, term, course_catalog, courses, recreate_database=False) -> str
                     break
 
     submit = driver.find_element(By.NAME, 'submit')
+    print('Submitting...\n')
     driver.execute_script("arguments[0].click();", submit)
     
 
     time.sleep(3)
     submit2 = WebDriverWait(driver, 10).until(EC.visibility_of_element_located((By.NAME, 'submit')))
+    print('Done!')
+
+    info = driver.find_element(By.CSS_SELECTOR, '#ptl-content > table:nth-child(1) > tbody:nth-child(2) > tr:nth-child(1) > th:nth-child(1) > h3:nth-child(1)').text
+    skip = False
+    if '0 Pending' in info:
+        skip = True
     driver.execute_script("arguments[0].click();", submit2)
 
-    try:
-        pending = WebDriverWait(driver, 30).until(EC.visibility_of_all_elements_located((By.NAME, 'ack')))
+    if not skip:
+        print('Acknowledging...\n')
+        try:
+            pending = WebDriverWait(driver, 20).until(EC.visibility_of_all_elements_located((By.NAME, 'ack')))
+        
+            while len(pending) != 0:
+                pending[0].click()
+                pending.pop(0)
+                if len(pending) == 0:
+                    break
+                pending = WebDriverWait(driver, 30).until(EC.visibility_of_all_elements_located((By.NAME, 'ack')))
     
-        while len(pending) != 0:
-            pending[0].click()
-            pending = WebDriverWait(driver, 30).until(EC.visibility_of_all_elements_located((By.NAME, 'ack')))
-    
-    except:
-        pass
+        except:
+         pass
 
+    WebDriverWait(driver, 30).until(EC.visibility_of_element_located((By.CSS_SELECTOR, '#ptl-content > table:nth-child(5)'))).screenshot('courses.png')
+    print('Finished!\n')
+
+    driver.quit()
 
     return True
 
 
-# courses = ['envr 240 a', 'geog 101 a']
-courses = input('Enter courses: ').split(',')
+courses = input('Enter courses and comma separate them (eg. envr 240 a, geog 101 a): ').split(',')
+semester = input('Enter semester (eg. 2022 Summer): ')
+is_pharmacy = input('Department of Pharmacy? (y/n): ')
 
-result = register(url, '2022SU', '202122', courses)
+year, semester_name = semester.split()
+
+
+if semester_name.lower() == 'summer':
+    semester_initials = 'SU'
+    catalog = f'{int(year)-1}{year[2:]}'
+
+elif semester_name.lower() == 'fall':
+    semester_initials = 'FA'
+    catalog = f'{year}{int(year[2:])+1}'
+
+elif semester_name.lower() == 'winter':
+    semester_initials = 'WN'
+    print('Winter is not supported yet')
+    exit()
+
+elif semester_name.lower() == 'spring':
+    semester_initials = 'SP'
+    print('Spring is not supported yet')
+    exit()
+
+
+if is_pharmacy.lower() == 'y':
+    term = f'PH{year[2:]}{semester_initials}'
+    catalog = 'PH' + catalog[2:]
+else:
+    term = f'{year}{semester_initials}'
+
+
+result = register(url, term, catalog, courses)
 
 if result:
     print('Successfully registered! (You may want to check if some courses have not been registered, pre req not met or credit limit reached)')
