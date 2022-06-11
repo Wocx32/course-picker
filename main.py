@@ -11,6 +11,10 @@ from selenium.webdriver.common.by import By
 
 import config
 
+if not all([config.username, config.password, config.driver_path]):
+    print('Please enter your username, password and driver path in config.py')
+    exit()
+
 try:
     driver_path = config.driver_path
 except:
@@ -169,7 +173,7 @@ def register(url, term, course_catalog, courses, recreate_database=False) -> str
 
     time.sleep(3)
     submit2 = WebDriverWait(driver, 10).until(EC.visibility_of_element_located((By.NAME, 'submit')))
-    print('Done!')
+    print('Submitted!')
 
     info = driver.find_element(By.CSS_SELECTOR, '#ptl-content > table:nth-child(1) > tbody:nth-child(2) > tr:nth-child(1) > th:nth-child(1) > h3:nth-child(1)').text
     skip = False
