@@ -5,6 +5,8 @@ Note: Only supports Forman Christian College's Empower SIS
 
 Note: **You must have Firefox installed**
 
+**USE AT YOUR OWN RISK**
+
 # Install
 Clone this repository
     
