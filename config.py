@@ -1,3 +1,3 @@
 username = ''
 password = ''
-driver_path = ''
+driver_path = 'geckodriver.exe'
